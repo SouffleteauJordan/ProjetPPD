@@ -1,0 +1,32 @@
+.pairActive {
+  background-color: #E8D76E;
+}
+
+.tooltip.customClass .tooltip-inner {
+  color: white;
+  background-color: #928f8a;
+  box-shadow: 0 6px 12px rgba(0,0,0,.175);
+}
+
+.follow_container .btn-default {
+	background-color: #1E1E1E;
+	color: #e7e7e7;
+}
+
+#formModal .modal-header {
+	font-family: 'Pacifico', cursive;
+	color: white;
+	background-color: #1E1E1E;
+}
+
+#formModal .modal-footer {
+	background-color: #d2d2d2;
+}
+
+#loginView label {
+	color: white;
+}
+
+#registerForm label {
+	color: white;
+}
