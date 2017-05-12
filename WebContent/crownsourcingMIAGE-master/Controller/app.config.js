@@ -9,6 +9,7 @@ angular
 			})
 			.when('/', {
 				templateUrl: 'View/login.view.html',
+				controller : 'loginCtrl'
 			})
 			.when('/register', {
 				templateUrl: 'View/register.view.html',

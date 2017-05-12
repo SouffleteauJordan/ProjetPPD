@@ -23,11 +23,14 @@ public class CollectData {
 			File file1 = new File("E:/Projet Java/ProjetPPD/WebContent/Files/Dataset1.txt");
 			File file2 = new File("E:/Projet Java/ProjetPPD/WebContent/Files/Dataset2.txt");
 			BufferedReader br1 = new BufferedReader(new FileReader(file1));
-			BufferedReader br2 = new BufferedReader(new FileReader(file2));
+			BufferedReader br2;
 			String line1 = "";
 			String line2 = "";
 						
 			double val;
+			int index = 0;
+			br2 = new BufferedReader(new FileReader(file2));
+
 			while ((line1 = br1.readLine()) != null) {
 				while ((line2 = br2.readLine()) != null) {
 					Pair p = new Pair(line1, line2);
@@ -41,7 +44,7 @@ public class CollectData {
 					int length = tab1.length;
 					if (tab2.length < length)
 						length = tab2.length;
-					
+					String[] listNom = {"RestaurantName", "RestaurantAdress", "RestaurantVille", "RestaurantPhone", "RestaurantType", };
 					for (int i = 0 ; i < length-1 ; i++){
 						String elem1 = tab1[i].trim();
 						String elem2 = tab2[i].trim();
@@ -51,17 +54,18 @@ public class CollectData {
 						val = Double.parseDouble(new DecimalFormat("#.#").format(val).replace(',', '.'));
 						if(val < 0)
 							val = 0;
-						Attribut a = new Attribut(p, elem1, elem2, val);
+						Attribut a = new Attribut(p, listNom[i], elem1, elem2, val, 1);
 						p.addAttribut(a);
 					}
 					DBService.INSERT_PAIR(p);
 					DBService.INSERT_PAIR_TABLE_PRE_TRAITEMENT(p);
 					DBService.INSERT_PAIR_TABLE_SIMILARITE(p);
 				}
-				
 			}
+			br2.close();	
+			System.out.println("Ligne : " + index);
+			index++;
 			br1.close();
-			br2.close();
 		} catch (FileNotFoundException e) {
 			e.printStackTrace();
 		} catch (IOException e) {
@@ -103,7 +107,7 @@ public class CollectData {
 			Double moySimilar = p.getMoySimilar();
 			PairSimilairePrime.setMoySimilar(moySimilar);
 			
-			DBService.INSERT_PAIR__TABLE_SIMILARITE_PRIME(PairSimilairePrime);
+			DBService.INSERT_PAIR_TABLE_SIMILARITE_PRIME(PairSimilairePrime);
 			/*if(!p_Prime.getListAttribut().isEmpty())
 				System.out.println(p_Prime.toString());*/
 		}

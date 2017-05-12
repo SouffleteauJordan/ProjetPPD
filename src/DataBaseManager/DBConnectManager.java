@@ -3,8 +3,6 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import com.mysql.jdbc.Connection;
 
-import ProjectCore.CollectData;
-
 public class DBConnectManager {
 	
 	private static Connection connDb;

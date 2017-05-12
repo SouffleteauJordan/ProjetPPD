@@ -30,3 +30,11 @@
 #registerForm label {
 	color: white;
 }
+
+#loginForm label {
+	color: white;
+}
+
+#echelleSlider .slider-selection {
+	background: #BABABA;
+}

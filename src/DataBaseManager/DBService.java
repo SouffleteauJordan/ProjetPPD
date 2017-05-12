@@ -1,13 +1,9 @@
 package DataBaseManager;
-import java.math.BigDecimal;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-
 import com.mysql.jdbc.PreparedStatement;
 import com.mysql.jdbc.Statement;
-
 import DataBean.Attribut;
 import DataBean.Pair;
 import DataBean.RandomPair;
@@ -106,6 +102,42 @@ public class DBService {
 			e.printStackTrace();
 		}
 
+		String sqlTableSimilarRApriori = "DELETE FROM `tablesimilarrapriori` WHERE 1";
+		PreparedStatement statementTableSimilarRApriori;
+		try {
+			statementTableSimilarRApriori = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlTableSimilarRApriori);
+			statementTableSimilarRApriori.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		String sqlTableSimilarRApriori2 = "ALTER TABLE tablesimilarrapriori AUTO_INCREMENT = 1";
+		PreparedStatement statementTableSimilarRApriori2;
+		try {
+			statementTableSimilarRApriori2 = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlTableSimilarRApriori2);
+			statementTableSimilarRApriori2.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
+		String sqlTableSimilarRPrimeApriori = "DELETE FROM `tablesimilarrprimeapriori` WHERE 1";
+		PreparedStatement statementTableSimilarRPrimeApriori;
+		try {
+			statementTableSimilarRPrimeApriori = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlTableSimilarRPrimeApriori);
+			statementTableSimilarRPrimeApriori.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		String sqlTableSimilarRPrimeApriori2 = "ALTER TABLE tablesimilarrprimeapriori AUTO_INCREMENT = 1";
+		PreparedStatement statementTableSimilarRPrimeApriori2;
+		try {
+			statementTableSimilarRPrimeApriori2 = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlTableSimilarRPrimeApriori2);
+			statementTableSimilarRPrimeApriori2.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+
 	}
 	
 	public static void INSERT_PAIR(Pair p){
@@ -140,31 +172,64 @@ public class DBService {
 	}
 		
 	public static void INSERT_ATTRIBUT(Attribut a, int idPair){
-		String sql = "INSERT INTO attribut(PairId, Attr1, Attr2, Val) VALUES (?,?,?,?)";
 				
-		PreparedStatement statement;
+		String sqlSelect = "SELECT * FROM attribut WHERE PairId = ? and nomAttribut = ?";
+		PreparedStatement statementSelect;
+		boolean exist = false;
 		try {
-			statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-			statement.setInt(1, idPair);
-			statement.setString(2, a.getElem1());
-			statement.setString(3, a.getElem2());
-			statement.setDouble(4, a.getVal());
+			statementSelect = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlSelect);
+			statementSelect.setInt(1, idPair);
+			statementSelect.setString(2, a.getNomAttribut());
+			ResultSet resSelect = statementSelect.executeQuery();
+			while(resSelect.next()) {
+				exist = true;
+				String sqlUpdate = "UPDATE attribut SET val = ?, nbrVote = ? WHERE PairId = ? and nomAttribut = ?";
+				PreparedStatement statementUpdate;
+				try {
+					statementUpdate = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlUpdate);
+					statementUpdate.setDouble(1, a.getVal());
+					statementUpdate.setDouble(2, resSelect.getInt(6) + 1);
+					statementUpdate.setInt(3, idPair);
+					statementUpdate.setString(4, a.getNomAttribut());
+					statementUpdate.executeUpdate();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
+			}
 			
-			int affectedRows = statement.executeUpdate();
-	        if (affectedRows == 0) {
-	            throw new SQLException("Creating user failed, no rows affected.");
-	        }
-
-	        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
-	            if (generatedKeys.next()) {
-	                a.setId(generatedKeys.getInt(1));
-	            }
-	            else {
-	                throw new SQLException("Creating user failed, no ID obtained.");
-	            }
-	        }
 		} catch (SQLException e) {
 			e.printStackTrace();
+		}
+		
+		if(!exist){
+			String sql = "INSERT INTO attribut(PairId, nomAttribut, Attr1, Attr2, Val, nbrVote) VALUES (?,?,?,?,?,?)";
+			
+			PreparedStatement statement;
+			try {
+				statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+				statement.setInt(1, idPair);
+				statement.setString(2, a.getNomAttribut());
+				statement.setString(3, a.getElem1());
+				statement.setString(4, a.getElem2());
+				statement.setDouble(5, a.getVal());
+				statement.setDouble(6, a.getNbrVote());
+				
+				int affectedRows = statement.executeUpdate();
+		        if (affectedRows == 0) {
+		            throw new SQLException("Creating user failed, no rows affected.");
+		        }
+
+		        try (ResultSet generatedKeys = statement.getGeneratedKeys()) {
+		            if (generatedKeys.next()) {
+		                a.setId(generatedKeys.getInt(1));
+		            }
+		            else {
+		                throw new SQLException("Creating user failed, no ID obtained.");
+		            }
+		        }
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
 		}
 	}
 		
@@ -175,27 +240,31 @@ public class DBService {
 		try {
 			statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql);
 			statement.setInt(1, p.getId());
-			int i = 2;
-			double moySim = 0;
-			for (Attribut a : p.getListAttribut()) {
-				statement.setInt(i, a.getId());
-				i++;
-				moySim = moySim + a.getVal();
-			}
-			moySim = moySim / p.getListAttribut().size();
-			BigDecimal bd = new BigDecimal(moySim);
-			bd = bd.setScale(3, BigDecimal.ROUND_FLOOR);
-			statement.setDouble(i, bd.doubleValue());
+			
+			Attribut attr1 = p.getListAttribut().get(0);
+			statement.setInt(2, attr1.getId());
+			Attribut attr2 = p.getListAttribut().get(1);
+			statement.setInt(3, attr2.getId());
+			Attribut attr3 = p.getListAttribut().get(2);
+			statement.setInt(4, attr3.getId());
+			Attribut attr4 = p.getListAttribut().get(3);
+			statement.setInt(5, attr4.getId());
+			Attribut attr5 = p.getListAttribut().get(4);
+			statement.setInt(6, attr5.getId());
+			double moySim = ((attr1.getVal() * attr1.getNbrVote()) + (attr2.getVal() * attr2.getNbrVote()) + (attr3.getVal() * attr3.getNbrVote()) + (attr4.getVal() * attr4.getNbrVote()) + (attr5.getVal() * attr5.getNbrVote())) / (attr1.getNbrVote() + attr2.getNbrVote() + attr3.getNbrVote() + attr4.getNbrVote() + attr5.getNbrVote());
+
+			statement.setDouble(7, moySim);
 			statement.executeUpdate();
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
 	}
 	
-	public static void INSERT_PAIR_TABLE_SIMILARITE(Pair p){
+	public static double INSERT_PAIR_TABLE_SIMILARITE(Pair p){
 		String sqlSelect = "SELECT * FROM tablesimilarr WHERE idPair = ?";
 		PreparedStatement statementSelect;
 		int nbrVote = 1;
+		double moySim = 0;
 		boolean exist = false;
 		try {
 			statementSelect = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlSelect);
@@ -203,16 +272,20 @@ public class DBService {
 			ResultSet resSelect = statementSelect.executeQuery();
 			while(resSelect.next()) {
 				exist = true;
-				double val = resSelect.getDouble(8);
 				nbrVote = resSelect.getInt(9);
 				nbrVote++;
 				String sqlUpdate = "UPDATE tablesimilarr SET moySimilar = ?, nbrVote = ? WHERE idPair = ?";
 				PreparedStatement statementUpdate;
 				try {
 					statementUpdate = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlUpdate);
-					BigDecimal bd = new BigDecimal((val + p.getVal())/2);
-					bd = bd.setScale(3, BigDecimal.ROUND_FLOOR);
-					statementUpdate.setDouble(1, bd.doubleValue());
+					Attribut attr1 = p.getListAttribut().get(0);
+					Attribut attr2 = p.getListAttribut().get(1);
+					Attribut attr3 = p.getListAttribut().get(2);
+					Attribut attr4 = p.getListAttribut().get(3);
+					Attribut attr5 = p.getListAttribut().get(4);
+					moySim = ((attr1.getVal() * attr1.getNbrVote()) + (attr2.getVal() * attr2.getNbrVote()) + (attr3.getVal() * attr3.getNbrVote()) + (attr4.getVal() * attr4.getNbrVote()) + (attr5.getVal() * attr5.getNbrVote())) / (attr1.getNbrVote() + attr2.getNbrVote() + attr3.getNbrVote() + attr4.getNbrVote() + attr5.getNbrVote());
+										
+					statementUpdate.setDouble(1, moySim);
 					statementUpdate.setDouble(2, nbrVote);
 					statementUpdate.setInt(3, p.getId());
 					statementUpdate.executeUpdate();
@@ -233,22 +306,54 @@ public class DBService {
 				statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql);
 				statement.setInt(1, p.getId());
 				
-				int i = 2;
-				double moySim = 0;
-				for (Attribut a : p.getListAttribut()) {
-					statement.setInt(i, a.getId());
-					i++;
-					moySim = moySim + a.getVal();
-				}
-				moySim = moySim / p.getListAttribut().size();
-				BigDecimal bd = new BigDecimal(moySim);
-				bd = bd.setScale(3, BigDecimal.ROUND_FLOOR);
-				statement.setDouble(i, bd.doubleValue());
-				statement.setInt(i+1, nbrVote);
+				Attribut attr1 = p.getListAttribut().get(0);
+				statement.setInt(2, attr1.getId());
+				Attribut attr2 = p.getListAttribut().get(1);
+				statement.setInt(3, attr2.getId());
+				Attribut attr3 = p.getListAttribut().get(2);
+				statement.setInt(4, attr3.getId());
+				Attribut attr4 = p.getListAttribut().get(3);
+				statement.setInt(5, attr4.getId());
+				Attribut attr5 = p.getListAttribut().get(4);
+				statement.setInt(6, attr5.getId());
+				moySim = ((attr1.getVal() * attr1.getNbrVote()) + (attr2.getVal() * attr2.getNbrVote()) + (attr3.getVal() * attr3.getNbrVote()) + (attr4.getVal() * attr4.getNbrVote()) + (attr5.getVal() * attr5.getNbrVote())) / (attr1.getNbrVote() + attr2.getNbrVote() + attr3.getNbrVote() + attr4.getNbrVote() + attr5.getNbrVote());
+				
+				statement.setDouble(7, moySim);
+				statement.setInt(8, nbrVote);
 				statement.executeUpdate();
 			} catch (SQLException e) {
 				e.printStackTrace();
 			}
+		}
+		return moySim;
+	}
+	
+	public static void INSERT_PAIR_TABLE_SIMILARITE_APRIORI(Pair p){
+		double moySim = 0;		
+		String sql = "INSERT INTO tablesimilarrapriori (idPair, idAttribut1, idAttribut2, idAttribut3, idAttribut4, idAttribut5, moySimilar, nbrVote) VALUES (?,?,?,?,?,?,?,?)";
+				
+		PreparedStatement statement;
+		try {
+			statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql);
+			statement.setInt(1, p.getId());
+			
+			Attribut attr1 = p.getListAttribut().get(0);
+			statement.setInt(2, attr1.getId());
+			Attribut attr2 = p.getListAttribut().get(1);
+			statement.setInt(3, attr2.getId());
+			Attribut attr3 = p.getListAttribut().get(2);
+			statement.setInt(4, attr3.getId());
+			Attribut attr4 = p.getListAttribut().get(3);
+			statement.setInt(5, attr4.getId());
+			Attribut attr5 = p.getListAttribut().get(4);
+			statement.setInt(6, attr5.getId());
+			moySim = (attr1.getVal() + attr2.getVal() + attr3.getVal()  + attr4.getVal() + attr5.getVal()) / (5);
+			
+			statement.setDouble(7, moySim);
+			statement.setInt(8, 1);
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -263,10 +368,12 @@ public class DBService {
 			
 			ResultSet res = statement.executeQuery();
 			while (res.next()) {
-				String Attr1 = res.getString(3);
-				String Attr2 = res.getString(4);
-				Double Val = res.getDouble(5);
-				attr = new Attribut(null, Attr1, Attr2, Val);
+				String nomAttribut = res.getString(3);
+				String Attr1 = res.getString(4);
+				String Attr2 = res.getString(5);
+				Double Val = res.getDouble(6);
+				int nbrVote = res.getInt(7);
+				attr = new Attribut(null, nomAttribut, Attr1, Attr2, Val, nbrVote);
 				attr.setId(res.getInt(1));
 			}
 			
@@ -288,10 +395,12 @@ public class DBService {
 			
 			ResultSet res = statement.executeQuery();
 			while (res.next()) {
-				String Attr1 = res.getString(3);
-				String Attr2 = res.getString(4);
-				Double Val = res.getDouble(5);
-				attr = new Attribut(null, Attr1, Attr2, Val);
+				String nomAttribut = res.getString(3);
+				String Attr1 = res.getString(4);
+				String Attr2 = res.getString(5);
+				Double Val = res.getDouble(6);
+				int nbrVote = res.getInt(7);
+				attr = new Attribut(null, nomAttribut, Attr1, Attr2, Val, nbrVote);
 				attr.setId(res.getInt(1));
 				listAttribut.add(attr);
 			}
@@ -330,12 +439,71 @@ public class DBService {
 		return listPairSimilaire;
 	}
 	
-	public static void INSERT_PAIR__TABLE_SIMILARITE_PRIME(SimilarPair p){
-		String sql = "INSERT INTO tablesimilarrprime (idPair, idAttribut1, idAttribut2, idAttribut3, idAttribut4, idAttribut5, moySimilar) VALUES (?,?,?,?,?,?,?)";
+	public static void INSERT_PAIR_TABLE_SIMILARITE_PRIME(SimilarPair p){
+		String sqlSelect = "SELECT * FROM tablesimilarrprime WHERE idPair = ?";
+		PreparedStatement statementSelect;
+		boolean exist = false;
+		try {
+			statementSelect = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlSelect);
+			statementSelect.setInt(1, p.getId());
+			ResultSet resSelect = statementSelect.executeQuery();
+			while(resSelect.next()) {
+				exist = true;
+				String sqlUpdate = "UPDATE tablesimilarrprime SET moySimilar = ? WHERE idPair = ?";
+				PreparedStatement statementUpdate;
+				try {
+					statementUpdate = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlUpdate);
+					statementUpdate.setDouble(1, p.getMoySimilar());
+					statementUpdate.setInt(2, p.getId());
+					statementUpdate.executeUpdate();
+				} catch (SQLException e) {
+					e.printStackTrace();
+				}
 				
+				if(p.getMoySimilar() <= 0.5){
+					String sqlDelete = "DELETE FROM tablesimilarrprime WHERE idPair = ?";
+					PreparedStatement statementDelete;
+					try {
+						statementDelete = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlDelete);
+						statementDelete.setInt(1, p.getId());
+						statementDelete.executeUpdate();
+					} catch (SQLException e) {
+						e.printStackTrace();
+					}
+				}
+			}
+			
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+		
+		if(!exist){
+			String sql = "INSERT INTO tablesimilarrprime (idPair, idAttribut1, idAttribut2, idAttribut3, idAttribut4, idAttribut5, moySimilar) VALUES (?,?,?,?,?,?,?)";
+			
+			PreparedStatement statement;
+			try {
+				statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql);
+				statement.setInt(1, p.getId());
+				statement.setInt(2, p.getIdAttribut1());
+				statement.setInt(3, p.getIdAttribut2());
+				statement.setInt(4, p.getIdAttribut3());
+				statement.setInt(5, p.getIdAttribut4());
+				statement.setInt(6, p.getIdAttribut5());
+				statement.setDouble(7, p.getMoySimilar());
+				
+				statement.executeUpdate();
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	public static void INSERT_PAIR_TABLE_SIMILARITE_PRIME_APRIORI(SimilarPair p){
+		String sqlApriori = "INSERT INTO tablesimilarrprimeapriori (idPair, idAttribut1, idAttribut2, idAttribut3, idAttribut4, idAttribut5, moySimilar) VALUES (?,?,?,?,?,?,?)";
+		
 		PreparedStatement statement;
 		try {
-			statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sql);
+			statement = (PreparedStatement) DBConnectManager.getConnectionDB().prepareStatement(sqlApriori);
 			statement.setInt(1, p.getId());
 			statement.setInt(2, p.getIdAttribut1());
 			statement.setInt(3, p.getIdAttribut2());
@@ -348,6 +516,7 @@ public class DBService {
 		} catch (SQLException e) {
 			e.printStackTrace();
 		}
+		
 	}
 
 	

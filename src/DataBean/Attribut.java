@@ -4,21 +4,50 @@ public class Attribut {
 
 	private int id;
 	private Pair p;
+	private String nomAttribut;
 	private String elem1;
 	private String elem2;
 	private double val;
+	private int nbrVote;
 	
 	public Attribut() {
 	}
-	public Attribut(Pair p, String elem1, String elem2, double val){
+	
+	public Attribut(Pair p, String nomAttribut, String elem1, String elem2, double val, int nbrVote){
+		this.p = p;
+		this.nomAttribut = nomAttribut;
+		this.elem1 = elem1;
+		this.elem2 = elem2;
+		this.val = val;
+		this.nbrVote = nbrVote;
+	}
+	
+	public Attribut(Pair p, String elem1, String elem2, double val, int nbrVote){
 		this.p = p;
 		this.elem1 = elem1;
 		this.elem2 = elem2;
 		this.val = val;
+		this.nbrVote = nbrVote;
+	}
+	
+	public String getNomAttribut() {
+		return nomAttribut;
+	}
+	
+	public void setNomAttribut(String nomAttribut) {
+		this.nomAttribut = nomAttribut;
 	}
 	
 	public void setP(Pair p) {
 		this.p = p;
+	}
+	
+	public int getNbrVote() {
+		return nbrVote;
+	}
+	
+	public void setNbrVote(int nbrVote) {
+		this.nbrVote = nbrVote;
 	}
 	
 	public int getId() {
