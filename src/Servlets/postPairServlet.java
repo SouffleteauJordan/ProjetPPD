@@ -80,7 +80,7 @@ public class postPairServlet extends HttpServlet {
 
 		try {
 			Apriori ap = new Apriori(null);
-			ap.
+			// ICI ON APPEL APRIORI !!
 		} catch (Exception e) {
 			
 			e.printStackTrace();
